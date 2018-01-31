@@ -10,27 +10,30 @@ import UIKit
 
 class ToDoListController: UITableViewController {
     
-    let itemArray = ["test1", "test2", "test3"]
+    var itemArray = [String]()
+    
+    //MARK: - setting user defaults
+    let userDefaults = UserDefaults.standard
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if let items = userDefaults.array(forKey: "ArrayOfToDoItems") as? [String]
+        {
+            itemArray = items
+        }
 
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem
-    }
+   }
 
     // MARK: - Table view data source
 
-    // function to set the number of rows
+    // TODO: function to set the number of rows
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
         return itemArray.count
     }
     
-    // setting the content of each cell
+    // TODO: setting the content of each cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
@@ -40,12 +43,13 @@ class ToDoListController: UITableViewController {
         return cell
     }
     
+    
     // MARK: - Table view delegate methods
     
     // function responsible for actions when a row is touched
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
-        // return a reference to the cell at indexpath i.e the cell that is selected by user
+        // TODO: return a reference to the cell at indexpath i.e the cell that is selected by user
         //     ^|---> tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         
         if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark
@@ -58,12 +62,60 @@ class ToDoListController: UITableViewController {
             
         }
         
-       
-        
-        
-        // to remove the gray highlight like a flash
+        // TODO:  to remove the gray highlight like a flash
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
+    //MARK: - Add items to the to do list
+    @IBAction func addItems(_ sender: UIBarButtonItem)
+    {
+        var textFieldFromAlert = UITextField()
+        
+        //TODO: adding an alert
+        let alert = UIAlertController(title: "Add item", message: "Please enter the item you would like to add", preferredStyle: .alert)
+        
+        // creating action for that alert
+        let additionAction = UIAlertAction(title: "Add", style: .default)
+        { (action) in
+            
+            //add item to the array of items
+            self.itemArray.append(textFieldFromAlert.text!)
+            
+            //saving the array of items to user defaults
+            self.userDefaults.set(self.itemArray, forKey: "ArrayOfToDoItems")
+            
+            // relaod the tableview to display the new contents of the array 
+            self.tableView.reloadData()
+        }
+        
+        //TODO: adding textfield to that alert
+        alert.addTextField { (addItmeTextField) in
+            
+            //the text that appears in gray when the text box is not selected
+            addItmeTextField.placeholder = "Type in your item"
+            
+            textFieldFromAlert = addItmeTextField
+            
+        }
+        
+        //add action to alert
+        alert.addAction(additionAction)
+        
+        //presenting the action
+        present(alert, animated: true, completion: nil)
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     /*
