@@ -10,7 +10,7 @@ import UIKit
 
 class ToDoListController: UITableViewController {
     
-    var itemArray = [String]()
+    var itemArray = [Item]()
     
     //MARK: - setting user defaults
     let userDefaults = UserDefaults.standard
@@ -18,10 +18,18 @@ class ToDoListController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let items = userDefaults.array(forKey: "ArrayOfToDoItems") as? [String]
-        {
-            itemArray = items
-        }
+        let item1 = Item()
+        item1.itemName = "sid1"
+        itemArray.append(item1)
+        
+        let item2 = Item()
+        item2.itemName = "sid2"
+        itemArray.append(item2)
+        
+//        if let items = userDefaults.array(forKey: "ArrayOfToDoItems") as? [Item]
+//        {
+//            itemArray = items
+//        }
 
    }
 
@@ -38,7 +46,22 @@ class ToDoListController: UITableViewController {
     {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
 
-        cell.textLabel?.text = itemArray[indexPath.row]
+        cell.textLabel?.text = itemArray[indexPath.row].itemName
+        
+        //TODO: Setting checkmark Using ternary operation
+        
+        cell.accessoryType = itemArray[indexPath.row].itemDone ? .checkmark : .none
+        
+        
+//        //TODO: setting the checkmark
+//        if itemArray[indexPath.row].itemDone == true
+//        {
+//            cell.accessoryType = .checkmark
+//        }
+//        else
+//        {
+//            cell.accessoryType = .none
+//        }
         
         return cell
     }
@@ -52,15 +75,23 @@ class ToDoListController: UITableViewController {
         // TODO: return a reference to the cell at indexpath i.e the cell that is selected by user
         //     ^|---> tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark
-        {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }
-        else
-        {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-            
-        }
+//        if itemArray[indexPath.row].itemDone == false
+//        {
+//            itemArray[indexPath.row].itemDone = true
+//        }
+//        else
+//        {
+//            itemArray[indexPath.row].itemDone = false
+//        }
+        
+        // replacement of above code ^^
+        itemArray[indexPath.row].itemDone = !itemArray[indexPath.row].itemDone
+        
+        // we do the below step to make table view run the above method so that TODO setting checkmark can be done.
+        // This method will set the property of class item to be false but does not set the property of cell to display checkmark
+        // thus reloading table to view to run all its functions and put checkmark for the cells which are touched.
+        tableView.reloadData()
+
         
         // TODO:  to remove the gray highlight like a flash
         tableView.deselectRow(at: indexPath, animated: true)
@@ -79,7 +110,9 @@ class ToDoListController: UITableViewController {
         { (action) in
             
             //add item to the array of items
-            self.itemArray.append(textFieldFromAlert.text!)
+            let item = Item()
+            item.itemName = textFieldFromAlert.text!
+            self.itemArray.append(item)
             
             //saving the array of items to user defaults
             self.userDefaults.set(self.itemArray, forKey: "ArrayOfToDoItems")
