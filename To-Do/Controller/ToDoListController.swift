@@ -12,24 +12,15 @@ class ToDoListController: UITableViewController {
     
     var itemArray = [Item]()
     
-    //MARK: - setting user defaults
-    let userDefaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let item1 = Item()
-        item1.itemName = "sid1"
-        itemArray.append(item1)
+        print(dataFilePath!)
         
-        let item2 = Item()
-        item2.itemName = "sid2"
-        itemArray.append(item2)
-        
-//        if let items = userDefaults.array(forKey: "ArrayOfToDoItems") as? [Item]
-//        {
-//            itemArray = items
-//        }
+        loadData()
 
    }
 
@@ -51,17 +42,6 @@ class ToDoListController: UITableViewController {
         //TODO: Setting checkmark Using ternary operation
         
         cell.accessoryType = itemArray[indexPath.row].itemDone ? .checkmark : .none
-        
-        
-//        //TODO: setting the checkmark
-//        if itemArray[indexPath.row].itemDone == true
-//        {
-//            cell.accessoryType = .checkmark
-//        }
-//        else
-//        {
-//            cell.accessoryType = .none
-//        }
         
         return cell
     }
@@ -87,12 +67,15 @@ class ToDoListController: UITableViewController {
         // replacement of above code ^^
         itemArray[indexPath.row].itemDone = !itemArray[indexPath.row].itemDone
         
+        //saving data when the done property that is checkmark is changed.
+        self.saveDataToPlist()
+        
         // we do the below step to make table view run the above method so that TODO setting checkmark can be done.
         // This method will set the property of class item to be false but does not set the property of cell to display checkmark
         // thus reloading table to view to run all its functions and put checkmark for the cells which are touched.
         tableView.reloadData()
 
-        
+
         // TODO:  to remove the gray highlight like a flash
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -114,10 +97,10 @@ class ToDoListController: UITableViewController {
             item.itemName = textFieldFromAlert.text!
             self.itemArray.append(item)
             
-            //saving the array of items to user defaults
-            self.userDefaults.set(self.itemArray, forKey: "ArrayOfToDoItems")
+            //saving data
+            self.saveDataToPlist()
             
-            // relaod the tableview to display the new contents of the array 
+            // relaod the tableview to display the new contents of the array
             self.tableView.reloadData()
         }
         
@@ -136,6 +119,43 @@ class ToDoListController: UITableViewController {
         
         //presenting the action
         present(alert, animated: true, completion: nil)
+    }
+    
+    //MARK: Save and Restoring Method
+    
+    func saveDataToPlist()
+    {
+        let encoder = PropertyListEncoder()
+        
+        do
+        {
+            let data = try encoder.encode(itemArray)
+            
+            try data.write(to: dataFilePath!)
+        }
+        catch
+        {
+            print("Error encoding data \(error)")
+            
+        }
+    }
+    
+    func loadData()
+    {
+        if let decodedData = try? Data(contentsOf: dataFilePath!)
+        {
+            let decoder = PropertyListDecoder()
+            do
+            {
+                itemArray = try decoder.decode([Item].self, from: decodedData)
+            }
+            catch
+            {
+                print("Error occured while decoding \(error)")
+                
+            }
+            
+        }
     }
     
     
