@@ -7,21 +7,24 @@
 //
 
 import UIKit
+import CoreData
 
 class ToDoListController: UITableViewController {
     
     var itemArray = [Item]()
     
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
-
+    var selectedCategory : Category?{
+        didSet{
+            loadData()
+        }
+    }
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        print(dataFilePath!)
-        
-        loadData()
-
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
    }
 
     // MARK: - Table view data source
@@ -64,11 +67,15 @@ class ToDoListController: UITableViewController {
 //            itemArray[indexPath.row].itemDone = false
 //        }
         
+//        //deleting items
+//        context.delete(itemArray[indexPath.row])
+//        itemArray.remove(at: indexPath.row)
+        
         // replacement of above code ^^
         itemArray[indexPath.row].itemDone = !itemArray[indexPath.row].itemDone
         
         //saving data when the done property that is checkmark is changed.
-        self.saveDataToPlist()
+        self.saveData()
         
         // we do the below step to make table view run the above method so that TODO setting checkmark can be done.
         // This method will set the property of class item to be false but does not set the property of cell to display checkmark
@@ -93,12 +100,15 @@ class ToDoListController: UITableViewController {
         { (action) in
             
             //add item to the array of items
-            let item = Item()
+            let item = Item(context: self.context)
             item.itemName = textFieldFromAlert.text!
+            item.itemDone = false
+            item.parentCategory = self.selectedCategory
+            
             self.itemArray.append(item)
             
             //saving data
-            self.saveDataToPlist()
+            self.saveData()
             
             // relaod the tableview to display the new contents of the array
             self.tableView.reloadData()
@@ -123,40 +133,77 @@ class ToDoListController: UITableViewController {
     
     //MARK: Save and Restoring Method
     
-    func saveDataToPlist()
+    func saveData()
     {
-        let encoder = PropertyListEncoder()
-        
-        do
-        {
-            let data = try encoder.encode(itemArray)
-            
-            try data.write(to: dataFilePath!)
+        do{
+            try context.save()
         }
-        catch
-        {
-            print("Error encoding data \(error)")
-            
+        catch{
+            print("\n\nError saving: \(error)")
         }
     }
     
-    func loadData()
+    func loadData(with request : NSFetchRequest<Item> = Item.fetchRequest(), andPredicate predicate: NSPredicate? = nil)
     {
-        if let decodedData = try? Data(contentsOf: dataFilePath!)
-        {
-            let decoder = PropertyListDecoder()
-            do
-            {
-                itemArray = try decoder.decode([Item].self, from: decodedData)
-            }
-            catch
-            {
-                print("Error occured while decoding \(error)")
-                
-            }
+        let categoryPredicate = NSPredicate(format: "parentCategory.categoryName MATCHES %@ ", selectedCategory!.categoryName!)
+        
+        // because of the paramter predicate can be optional we need to do optional binding of the predicate recieved from function caller
+        
+        if let additionalPredicate = predicate{
+            let compundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
             
+            request.predicate = compundPredicate
+        }
+        else{
+            request.predicate = categoryPredicate
+        }
+        
+        
+        do{
+            itemArray = try context.fetch(request)
+        }
+        catch{
+            print("\n\nError retrieving: \(error)")
         }
     }
+    
+}
+
+//MARK: - Search bar methods
+
+extension ToDoListController : UISearchBarDelegate
+{
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        let predicate = NSPredicate(format: "itemName CONTAINS[cd] %@", searchBar.text!)
+        
+        request.predicate = predicate
+        
+        let sortDescriptor = NSSortDescriptor(key: "itemName", ascending: true)
+        
+        request.sortDescriptors = [sortDescriptor]
+        
+        loadData(with: request, andPredicate: predicate)
+        
+        tableView.reloadData()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+        if searchBar.text?.count == 0
+        {
+            loadData()
+            tableView.reloadData()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+    
+}
     
     
     
@@ -216,4 +263,3 @@ class ToDoListController: UITableViewController {
     }
     */
 
-}
